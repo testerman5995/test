@@ -1,0 +1,1990 @@
+Here is the **complete structure and code** for a Java-based SQL Injection Lab project using **Microsoft SQL Server** instead of MySQL. The project includes:
+
+* ✅ JDBC connection to SQL Server
+* ✅ Vulnerable and secure examples in a **single combined program**
+* ✅ SQL Server-compatible database creation script
+* ✅ Lab steps with compilation and execution instructions
+
+---
+
+## 📁 Project Directory Structure
+
+```
+SQLInjectionLab_SQLServer/
+├── DBConnection.java             # JDBC connection class for SQL Server
+├── SQLInjectionDemo.java         # Main class for both vulnerable and secure inputs
+├── mssql-jdbc-12.4.2.jre11.jar   # JDBC Driver for SQL Server (version depends on your JDK)
+└── README.txt                    # Documentation & lab instructions
+```
+
+---
+
+## 📄 1. DBConnection.java (SQL Server JDBC Setup)
+
+```java
+import java.sql.Connection;
+import java.sql.DriverManager;
+
+public class DBConnection {
+    public static Connection getConnection() throws Exception {
+        String url = "jdbc:sqlserver://localhost:1433;databaseName=sql_injection_demo;encrypt=true;trustServerCertificate=true";
+        String username = "sa"; // use your SQL Server login
+        String password = "your_password"; // replace with your password
+
+        Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+        return DriverManager.getConnection(url, username, password);
+    }
+}
+```
+
+> ✅ `encrypt=true;trustServerCertificate=true` is used to avoid SSL handshake issues in local environments.
+
+---
+
+## 📄 2. SQLInjectionDemo.java (Vulnerable and Secure in One)
+
+```java
+import java.sql.*;
+import java.util.Scanner;
+
+public class SQLInjectionDemo {
+    public static void main(String[] args) {
+        try {
+            Scanner scanner = new Scanner(System.in);
+
+            System.out.println("Choose mode: \n1. Vulnerable\n2. Secure");
+            int choice = Integer.parseInt(scanner.nextLine());
+
+            System.out.print("Enter product name: ");
+            String name = scanner.nextLine();
+
+            System.out.print("Enter quantity: ");
+            int quantity = Integer.parseInt(scanner.nextLine());
+
+            System.out.print("Enter price: ");
+            double price = Double.parseDouble(scanner.nextLine());
+
+            Connection con = DBConnection.getConnection();
+
+            if (choice == 1) {
+                // VULNERABLE QUERY
+                String query = "INSERT INTO products (name, quantity, price) VALUES ('"  
+                               name   "', "   quantity   ", "   price   ")";
+                Statement stmt = con.createStatement();
+                System.out.println("Executing query: "   query);
+                stmt.executeUpdate(query);
+                System.out.println("Data inserted using VULNERABLE query.");
+            } else if (choice == 2) {
+                // SECURE QUERY USING PREPARED STATEMENT
+                String query = "INSERT INTO products (name, quantity, price) VALUES (?, ?, ?)";
+                PreparedStatement pstmt = con.prepareStatement(query);
+                pstmt.setString(1, name);
+                pstmt.setInt(2, quantity);
+                pstmt.setDouble(3, price);
+                pstmt.executeUpdate();
+                System.out.println("Data inserted using SECURE query.");
+            } else {
+                System.out.println("Invalid choice.");
+            }
+
+            con.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+---
+
+## 🗃️ 3. SQL Server Table Creation Script
+
+Run this in **SQL Server Management Studio** or Azure Data Studio:
+
+```sql
+CREATE DATABASE sql_injection_demo;
+GO
+
+USE sql_injection_demo;
+GO
+
+CREATE TABLE products (
+    id INT PRIMARY KEY IDENTITY(1,1),
+    name NVARCHAR(255) NOT NULL,
+    quantity INT NOT NULL,
+    price DECIMAL(10, 2) NOT NULL
+);
+```
+
+
+
+INSERT INTO products (name, quantity, price)
+VALUES 
+('Banana', 20, 2.50),
+('Orange', 15, 3.25);
+
+
+
+
+
+---
+
+## 🧪 Lab Procedure
+
+### Step 1: Setup SQL Server
+
+* Start SQL Server.
+* Run the SQL script above to create the database and table.
+
+### Step 2: Download the JDBC Driver
+
+* Go to [Microsoft JDBC Driver for SQL Server](https://learn.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server).
+* Download the latest version (e.g., 12.4) that matches your JDK:
+
+  * `mssql-jdbc-12.4.2.jre11.jar` → for JDK 11
+  * `mssql-jdbc-12.4.2.jre17.jar` → for JDK 17
+* Place the `.jar` in your project directory.
+
+### Step 3: Compile the Java Files
+
+```bash
+javac -cp .:mssql-jdbc-12.4.2.jre11.jar DBConnection.java SQLInjectionDemo.java
+```
+
+> On Windows, use `;` instead of `:`:
+
+```bash
+javac -cp .;mssql-jdbc-12.4.2.jre11.jar DBConnection.java SQLInjectionDemo.java
+```
+
+---
+
+### Step 4: Run the Application
+
+```bash
+java -cp .:mssql-jdbc-12.4.2.jre11.jar SQLInjectionDemo
+```
+
+> Windows:
+
+```bash
+java -cp .;mssql-jdbc-12.4.2.jre11.jar SQLInjectionDemo
+```
+
+---
+
+### Step 5: Try Both Modes
+
+#### ✅ Mode 1 (Vulnerable):
+
+Input:
+
+```
+name = Apple'); DROP TABLE products; --
+quantity = 1
+price = 1
+```
+
+Effect:
+
+* May delete the table if multiple statements are allowed.
+
+#### ✅ Mode 2 (Secure):
+
+* Input same data.
+* Injection has **no effect**; only valid data inserted.
+
+---
+
+## ✅ Summary Table
+
+| Feature            | Vulnerable Mode  | Secure Mode       |
+| ------------------ | ---------------- | ----------------- |
+| Query Type         | Concatenated SQL | PreparedStatement |
+| SQL Injection Risk | ✅ High           | ❌ Eliminated      |
+| Driver             | Statement        | PreparedStatement |
+
+---
+
+Would you like me to package this into a downloadable zip file (with JAR and README) or help import it into Eclipse or IntelliJ?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Viva Questions and Answers: SQL Injection Lab Project
+
+### Section A: Basics of SQL Injection
+
+1. **What is SQL Injection?**
+
+   * SQL Injection is a code injection technique where an attacker can interfere with the queries an application makes to its database, potentially accessing or manipulating data.
+
+2. **How does SQL Injection work?**
+
+   * It works by injecting malicious SQL statements into input fields, which are then executed by the backend database due to improper input validation.
+
+3. **What are the consequences of a successful SQL Injection attack?**
+
+   * Unauthorized access to data, deletion of data, modification of data, or even complete control over the database.
+
+4. **What type of applications are most vulnerable to SQL Injection?**
+
+   * Web applications that use dynamic SQL queries constructed using user inputs without proper sanitization.
+
+5. **Give a real-world example of SQL Injection.**
+
+   * Inputting `admin' OR '1'='1` in a login form bypasses authentication if the query isn't secured.
+
+6. **What input would cause SQL Injection in a login form?**
+
+   * `admin' --` or `admin' OR '1'='1`.
+
+7. **How can an attacker use SQL Injection to bypass authentication?**
+
+   * By injecting code that always evaluates to true, like `' OR '1'='1`, allowing access without valid credentials.
+
+8. **Why is directly concatenating user input into SQL queries dangerous?**
+
+   * It allows attackers to manipulate SQL queries and execute arbitrary commands.
+
+### Section B: Java and JDBC
+
+9. **What is JDBC in Java?**
+
+   * JDBC (Java Database Connectivity) is an API that allows Java applications to interact with relational databases.
+
+10. **What are the steps to connect to a database using JDBC?**
+
+    * Load the driver, create a connection, create a statement, execute the query, process results, and close the connection.
+
+11. **Which JDBC class is used to execute queries?**
+
+    * `Statement` or `PreparedStatement`.
+
+12. **What is the difference between Statement and PreparedStatement?**
+
+    * Statement builds queries dynamically; PreparedStatement pre-compiles the query and is safer and more efficient.
+
+13. **Why should we prefer PreparedStatement over Statement?**
+
+    * It prevents SQL Injection and provides better performance due to query caching.
+
+14. **What is the use of Class.forName() in JDBC?**
+
+    * It loads the JDBC driver class dynamically at runtime.
+
+15. **What is the role of the JDBC driver?**
+
+    * It acts as a bridge between the Java application and the database.
+
+16. **How do you handle SQL exceptions in JDBC?**
+
+    * Using try-catch blocks to catch `SQLException` and print meaningful messages.
+
+17. **What does executeUpdate() do?**
+
+    * Executes an update/insert/delete SQL statement and returns the number of affected rows.
+
+18. **What is the role of ResultSet in JDBC?**
+
+    * It holds the data returned by executing a SELECT query.
+
+### Section C: Security and Prepared Statements
+
+19. **How do prepared statements prevent SQL Injection?**
+
+    * By treating user input as data, not executable code.
+
+20. **What are parameterized queries?**
+
+    * Queries where placeholders (`?`) are used for parameters, which are set using setter methods.
+
+21. **Can PreparedStatement prevent all types of SQL Injection?**
+
+    * Yes, for dynamic data. But logic-based flaws or stored procedures can still be vulnerable if misused.
+
+22. **Are stored procedures vulnerable to SQL Injection?**
+
+    * Yes, if they include dynamic SQL inside without proper parameter handling.
+
+23. **What other methods (besides prepared statements) can help prevent SQL Injection?**
+
+    * Input validation, escaping user inputs, ORM frameworks, and Web Application Firewalls.
+
+24. **What are input validation and output encoding?**
+
+    * Input validation ensures input meets expected format. Output encoding ensures data is safely rendered.
+
+25. **What is a whitelist approach in input validation?**
+
+    * Only allowing known good values rather than blocking known bad ones.
+
+### Section D: Database Concepts
+
+26. **What is a primary key?**
+
+    * A column or combination that uniquely identifies each row in a table.
+
+27. **What is the difference between VARCHAR and NVARCHAR?**
+
+    * VARCHAR is for ASCII characters, NVARCHAR supports Unicode.
+
+28. **What does IDENTITY(1,1) do in SQL Server?**
+
+    * It auto-increments the primary key starting from 1, incrementing by 1.
+
+29. **What does DECIMAL(10,2) mean?**
+
+    * A number with up to 10 digits total, 2 of which are after the decimal.
+
+30. **What happens if you insert a duplicate primary key?**
+
+    * An error occurs due to primary key constraint violation.
+
+31. **How do you retrieve all data from a table in SQL?**
+
+    * `SELECT * FROM table_name;`
+
+32. **How do you delete all data from a table without deleting the table?**
+
+    * `DELETE FROM table_name;` or `TRUNCATE TABLE table_name;`
+
+### Section E: Practical Questions from the Project
+
+33. **Explain the working of your vulnerable SQL code.**
+
+    * It concatenates user input into the SQL string, making it executable and vulnerable to injection.
+
+34. **Explain the secure version using PreparedStatement.**
+
+    * It uses placeholders (`?`) and binds user inputs, treating them as values not code.
+
+35. **How did you test the SQL Injection vulnerability?**
+
+    * By entering inputs like `Apple'); DROP TABLE products; --` and observing the database.
+
+36. **What happens when you input: Apple'); DROP TABLE products; -- ?**
+
+    * In the vulnerable version, it deletes the entire `products` table.
+
+37. **What is the output of the application when SQL Injection is successful?**
+
+    * Success message followed by potential table deletion or error depending on DB config.
+
+38. **Why do you include encrypt=true;trustServerCertificate=true in the connection URL?**
+
+    * To avoid SSL handshake errors while connecting to SQL Server locally.
+
+39. **What is the role of Scanner in your code?**
+
+    * It reads user input from the console.
+
+40. **Can a user still inject malicious input in PreparedStatement? Why or why not?**
+
+    * No, because inputs are not executed as part of SQL code.
+
+41. **What would happen if we removed Class.forName() in JDBC?**
+
+    * In older JDBC versions, the driver won’t load, causing connection errors.
+
+42. **How does your application handle database exceptions?**
+
+    * Using try-catch blocks to handle and display error messages.
+
+43. **How do you check if your SQL table is deleted after injection?**
+
+    * By trying `SELECT * FROM products;` and checking for errors or empty results.
+
+44. **What is the purpose of the try-catch block in Java?**
+
+    * To handle exceptions gracefully and prevent application crashes.
+
+45. **What improvements can you suggest to your current project?**
+
+    * Add logging, GUI input forms, validation, and support for viewing table contents.
+
+### Bonus Questions (Medium Level)
+
+46. **How can you detect SQL Injection attacks at runtime?**
+
+    * Using logging, intrusion detection systems, or database activity monitoring.
+
+47. **What is SQLi UNION attack?**
+
+    * It uses the `UNION` SQL operator to combine results from multiple queries, possibly exposing data.
+
+48. **What tools are available to scan for SQL Injection vulnerabilities?**
+
+    * SQLMap, Burp Suite, OWASP ZAP.
+
+49. **What is the OWASP Top 10 and where does SQL Injection fall in it?**
+
+    * A list of top 10 web app security risks. SQL Injection is usually near the top.
+
+50. **Can you explain how you would fix SQL Injection in a web application using JSP/Servlets?**
+
+    * By using `PreparedStatement`, validating input, and avoiding dynamic SQL in servlets.
+
+==================================================================================================================================================================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Here's the **Two-Phase Commit Java Project**, updated to work with **Microsoft SQL Server** instead of MySQL.
+
+---
+
+## ✅ Two-Phase Commit in Java with Microsoft SQL Server
+
+### 🔍 Overview
+
+The goal is to simulate **2PC** across **two SQL Server databases**, ensuring a transaction either commits or rolls back on both.
+
+---
+
+## 🔧 Project Structure
+
+```
+TwoPhaseCommit/
+│
+├── config.properties         # Database configurations for both SQL Server databases
+├── DBConnection.java         # Connection handler
+├── TwoPhaseCommitMain.java   # Two-phase commit logic
+└── README.md                 # Instructions
+```
+
+---
+
+## 🛠 Step-by-Step Implementation
+
+---
+
+### 1. `config.properties`
+
+```properties
+db1.driver=com.microsoft.sqlserver.jdbc.SQLServerDriver
+db1.url=jdbc:sqlserver://localhost:1433;databaseName=db1
+db1.username=yourusername
+db1.password=yourpassword
+
+db2.driver=com.microsoft.sqlserver.jdbc.SQLServerDriver
+db2.url=jdbc:sqlserver://localhost:1433;databaseName=db2
+db2.username=yourusername
+db2.password=yourpassword
+```
+
+---
+
+### 2. `DBConnection.java`
+
+```java
+import java.sql.*;
+import java.util.Properties;
+import java.io.FileInputStream;
+
+public class DBConnection {
+    public static Connection getConnection(String dbPrefix) {
+        Connection con = null;
+        try {
+            Properties props = new Properties();
+            FileInputStream fis = new FileInputStream("config.properties");
+            props.load(fis);
+
+            String driver = props.getProperty(dbPrefix   ".driver");
+            String url = props.getProperty(dbPrefix   ".url");
+            String user = props.getProperty(dbPrefix   ".username");
+            String pass = props.getProperty(dbPrefix   ".password");
+
+            Class.forName(driver);
+            con = DriverManager.getConnection(url, user, pass);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return con;
+    }
+}
+```
+
+---
+
+### 3. `TwoPhaseCommitMain.java`
+
+```java
+import java.sql.*;
+
+public class TwoPhaseCommitMain {
+    public static void main(String[] args) {
+        Connection con1 = null, con2 = null;
+        Savepoint sp1 = null, sp2 = null;
+
+        try {
+            con1 = DBConnection.getConnection("db1");
+            con2 = DBConnection.getConnection("db2");
+
+            con1.setAutoCommit(false);
+            con2.setAutoCommit(false);
+
+            // Savepoints for rollback
+            sp1 = con1.setSavepoint();
+            sp2 = con2.setSavepoint();
+
+            // Execute SQL operations
+            Statement st1 = con1.createStatement();
+            Statement st2 = con2.createStatement();
+
+            st1.executeUpdate("INSERT INTO students (id, name) VALUES (1, 'Alice')");
+            st2.executeUpdate("INSERT INTO logs (log_id, message) VALUES (101, 'Alice Inserted')");
+
+            // Prepare phase
+            System.out.println("Prepare phase success. Proceeding to commit.");
+
+            con1.commit();
+            con2.commit();
+            System.out.println("Transaction committed on both databases.");
+
+        } catch (Exception e) {
+            try {
+                System.out.println("Error occurred. Rolling back both transactions.");
+                if (con1 != null) con1.rollback(sp1);
+                if (con2 != null) con2.rollback(sp2);
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+            e.printStackTrace();
+        } finally {
+            try {
+                if (con1 != null) con1.close();
+                if (con2 != null) con2.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+```
+
+---
+
+## 🧪 SQL Server Setup
+
+### Run this in **SQL Server Management Studio** or `sqlcmd`:
+
+#### On `db1`:
+
+```sql
+CREATE DATABASE db1;
+GO
+USE db1;
+GO
+CREATE TABLE students (
+    id INT PRIMARY KEY,
+    name VARCHAR(50)
+);
+```
+
+#### On `db2`:
+
+```sql
+CREATE DATABASE db2;
+GO
+USE db2;
+GO
+CREATE TABLE logs (
+    log_id INT PRIMARY KEY,
+    message VARCHAR(100)
+);
+```
+
+---
+
+## 📦 How to Run
+
+### 1. Download Microsoft JDBC Driver
+
+Get the `.jar` from:
+👉 [https://learn.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server](https://learn.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server)
+
+Place the `.jar` in your project directory.
+
+### 2. Compile & Run
+
+```bash
+javac -cp .:mssql-jdbc-12.4.1.jre11.jar DBConnection.java TwoPhaseCommitMain.java
+java -cp .:mssql-jdbc-12.4.1.jre11.jar TwoPhaseCommitMain
+```
+
+*(Use `;` instead of `:` on Windows.)*
+
+---
+
+## ✅ Output Example
+
+```
+Prepare phase success. Proceeding to commit.
+Transaction committed on both databases.
+```
+
+---
+
+## 💡 Troubleshooting
+
+* Ensure SQL Server allows TCP/IP connections and is listening on port 1433.
+* Enable SQL Server authentication (`Mixed Mode`) and create a login with sufficient permissions.
+
+---
+
+Would you like a ZIP package with all the files pre-configured for SQL Server?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+=======================================================================================================================================================================================================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Here’s a **complete breakdown, procedure, and code** for the *JAVA REST Assignment 1* based on the provided document. The assignment involves creating a **RESTful web service using Jersey (JAX-RS)**, and testing it using a browser, curl, Postman, and building a REST client.
+
+---
+
+### 🔧 **Tools & Technologies Used**
+
+* Java (JDK 8 )
+* Maven
+* Jersey (JAX-RS)
+* Apache Tomcat or any Servlet container
+* Postman / curl
+* IDE (Eclipse/IntelliJ)
+
+---
+
+## 🗂 Project Structure
+
+```
+java-rest-jersey/
+├── pom.xml
+├── src/
+│   └── main/
+│       ├── java/
+│       │   └── com/
+│       │       └── example/
+│       │           └── rest/
+│       │               ├── HelloService.java
+│       │               └── ClientApp.java
+│       └── webapp/
+│           ├── WEB-INF/
+│           │   └── web.xml
+│           └── index.jsp (optional)
+```
+
+---
+
+## ✅ 1. Create Project & Add Jersey Dependency
+
+Create a Maven project and update `pom.xml` with Jersey dependencies:
+
+```xml
+<project xmlns="http://maven.apache.org/POM/4.0.0" ...>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>java-rest-jersey</artifactId>
+  <version>1.0</version>
+  <packaging>war</packaging>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.glassfish.jersey.containers</groupId>
+      <artifactId>jersey-container-servlet</artifactId>
+      <version>2.35</version>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.jersey.media</groupId>
+      <artifactId>jersey-media-json-binding</artifactId>
+      <version>2.35</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>java-rest-jersey</finalName>
+  </build>
+</project>
+```
+
+---
+
+## ✅ 2. Code a Hello World RESTful Web Service
+
+Create the service class:
+
+### `HelloService.java`
+
+```java
+package com.example.rest;
+
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
+
+@Path("/hello")
+public class HelloService {
+
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public String getHello() {
+        return "Hello, World!";
+    }
+
+    @GET
+    @Path("/json")
+    @Produces(MediaType.APPLICATION_JSON)
+    public String getHelloJson() {
+        return "{\"message\": \"Hello, World!\"}";
+    }
+
+    @GET
+    @Path("/{name}")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String getPersonalizedHello(@PathParam("name") String name) {
+        return "Hello, "   name   "!";
+    }
+}
+```
+
+---
+
+## ✅ 3. Configure Jersey Servlet Container
+
+Update `web.xml`:
+
+### `web.xml`
+
+```xml
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="3.1">
+  <display-name>REST App</display-name>
+
+  <servlet>
+    <servlet-name>Jersey Web Application</servlet-name>
+    <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+    <init-param>
+      <param-name>jersey.config.server.provider.packages</param-name>
+      <param-value>com.example.rest</param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>Jersey Web Application</servlet-name>
+    <url-pattern>/api/*</url-pattern>
+  </servlet-mapping>
+</web-app>
+```
+
+---
+
+## ✅ 4. Test RESTful Web Service in Browser
+
+Deploy the WAR file in Tomcat or any servlet container. Then open:
+
+```
+http://localhost:8080/java-rest-jersey/api/hello
+```
+
+---
+
+## ✅ 5. Using JSON for RESTful Web Services
+
+Already implemented above as `/hello/json`.
+
+---
+
+## ✅ 6. Test RESTful Web Service using curl
+
+Open terminal and run:
+
+```bash
+curl http://localhost:8080/java-rest-jersey/api/hello
+curl http://localhost:8080/java-rest-jersey/api/hello/json
+curl http://localhost:8080/java-rest-jersey/api/hello/John
+```
+
+---
+
+## ✅ 7. Test RESTful Web Service using Postman
+
+1. Open Postman
+2. Use GET request:
+
+   * `http://localhost:8080/java-rest-jersey/api/hello`
+   * `http://localhost:8080/java-rest-jersey/api/hello/json`
+   * `http://localhost:8080/java-rest-jersey/api/hello/Alice`
+3. Check responses (plain text or JSON)
+
+---
+
+## ✅ 8. Code a RESTful Web Service Client
+
+### `ClientApp.java`
+
+```java
+package com.example.rest;
+
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.core.MediaType;
+
+public class ClientApp {
+    public static void main(String[] args) {
+        Client client = ClientBuilder.newClient();
+
+        String response = client
+            .target("http://localhost:8080/java-rest-jersey/api/hello")
+            .request(MediaType.TEXT_PLAIN)
+            .get(String.class);
+
+        System.out.println("Response from server: "   response);
+    }
+}
+```
+
+> 💡 Run this `main` method from your IDE to consume the REST service programmatically.
+
+---
+
+## ✅ Deployment Steps
+
+1. Build the WAR file:
+
+   ```bash
+   mvn clean install
+   ```
+2. Copy `target/java-rest-jersey.war` to Tomcat’s `webapps/` folder.
+3. Start Tomcat.
+4. Access the service at:
+
+   ```
+   http://localhost:8080/java-rest-jersey/api/hello
+   ```
+
+---
+
+If you'd like, I can also generate the full project folder structure with all files packaged into a `.zip`. Would you like that?
+
+
+
+
+
+
+
+
+
+### Viva Questions and Answers for Java REST Assignment (Jersey   Maven)
+
+---
+
+#### A. Project Basics & Structure
+
+1. **What is a RESTful web service?**
+
+   * It is a web service based on REST architecture that uses standard HTTP methods to expose resources.
+
+2. **What is the purpose of using Jersey in this project?**
+
+   * Jersey is a reference implementation of JAX-RS used to build RESTful web services in Java.
+
+3. **What does `@Path` annotation do?**
+
+   * It defines the URI path at which the resource will be available.
+
+4. **What is the use of `@GET`, `@POST`, etc.?**
+
+   * They specify the HTTP method that a method in the service class will respond to.
+
+5. **What is the function of `@Produces` and `@Consumes`?**
+
+   * `@Produces` defines the response content type; `@Consumes` defines the accepted request content type.
+
+6. **Why did we use `MediaType.APPLICATION_JSON`?**
+
+   * To indicate that the method returns or accepts JSON data.
+
+7. **Where is the entry point of a REST web service?**
+
+   * It is the URL mapped using the `@Path` annotation combined with servlet mapping in `web.xml`.
+
+8. **What is the URL to access your `HelloService` class?**
+
+   * `http://localhost:8080/<project-name>/api/hello`
+
+9. **Why do we use `web.xml` in a Java web project?**
+
+   * It configures servlets and maps them to URL patterns.
+
+10. **What is the role of the servlet mapping in `web.xml`?**
+
+* It tells the container which URLs should be handled by which servlet class.
+
+---
+
+#### B. Maven & Dependencies
+
+11. **What is Maven?**
+
+* Maven is a build automation tool used for project management and dependency management in Java.
+
+12. **What are the benefits of using Maven in this project?**
+
+* It simplifies dependency management and standardizes project structure.
+
+13. **What does `pom.xml` contain?**
+
+* It contains project metadata and dependencies.
+
+14. **How does Maven manage dependencies?**
+
+* Maven downloads required JAR files from a central repository defined in `pom.xml`.
+
+15. **What happens when you run `mvn clean install`?**
+
+* It cleans, compiles the code, runs tests, and packages the app into a WAR/JAR.
+
+---
+
+#### C. Jersey Framework Specific
+
+16. **What is Jersey and how is it related to JAX-RS?**
+
+* Jersey is the reference implementation of JAX-RS for developing RESTful services in Java.
+
+17. **What does the `ServletContainer` class do?**
+
+* It is the main Jersey servlet that handles REST requests.
+
+18. **What is `jersey.config.server.provider.packages` used for?**
+
+* It specifies the Java package to scan for REST resource classes.
+
+19. **How does Jersey discover your service classes?**
+
+* By scanning the specified package for classes annotated with `@Path`.
+
+20. **Can you return JSON from a REST service without external libraries?**
+
+* Yes, but using libraries like Jackson or Jersey makes it easier.
+
+---
+
+#### D. Annotations and HTTP Methods
+
+21. **What is the difference between `@GET`, `@POST`, `@PUT`, and `@DELETE`?**
+
+* They map to HTTP methods: read, create, update, and delete resources.
+
+22. **How do you handle path parameters in REST?**
+
+* By using `@PathParam` in the method parameters.
+
+23. **What does `@PathParam` do?**
+
+* It binds a URI path variable to a method parameter.
+
+24. **What happens if two methods have the same path and HTTP method?**
+
+* The application will fail to deploy or throw ambiguity errors.
+
+25. **Can a method return both plain text and JSON?**
+
+* Not at the same time. You can define separate methods with different `@Produces` annotations.
+
+---
+
+#### E. Testing Tools
+
+26. **How do you test a REST API in a browser?**
+
+* By accessing the GET endpoints via a web browser.
+
+27. **What is curl and how do you use it to test REST APIs?**
+
+* `curl` is a command-line tool to make HTTP requests; e.g., `curl http://localhost:8080/app/api/hello`.
+
+28. **How do you send parameters using curl?**
+
+* By appending them in the URL or using `-d` for body data.
+
+29. **What is Postman and why do we use it?**
+
+* Postman is a GUI tool to test REST APIs with support for headers, body, and various methods.
+
+30. **How do you check if a REST API returns JSON correctly in Postman?**
+
+* Send a GET/POST request and inspect the formatted JSON response in Postman.
+
+---
+
+#### F. REST Client Code
+
+31. **What is the purpose of writing a REST client in Java?**
+
+* To consume REST APIs from another application programmatically.
+
+32. **What is the `Client` class in the REST client code?**
+
+* It is part of JAX-RS client API used to make HTTP requests.
+
+33. **What happens when the client sends a request to a REST endpoint?**
+
+* The server processes it and returns the response, which the client reads.
+
+34. **How can you change the request to send POST data in the client code?**
+
+* By using `post(Entity.json(data))` in the request.
+
+35. **Is it possible to consume another REST API inside your service?**
+
+* Yes, using the Jersey Client API or any HTTP client library.
+
+---
+
+#### G. Deployment & Execution
+
+36. **How do you build and deploy the WAR file?**
+
+* Run `mvn clean install` and place the generated WAR file into Tomcat's `webapps` folder.
+
+37. **Where do you put the WAR file in Tomcat?**
+
+* In the `webapps/` directory.
+
+38. **What should be the URL pattern for your service?**
+
+* `http://localhost:8080/<war-name>/api/<resource>`
+
+39. **What happens when you access a REST path that doesn’t exist?**
+
+* You get a 404 Not Found error.
+
+40. **How do you debug errors in REST service?**
+
+* Check logs, add logging in service classes, and test using Postman or curl.
+
+---
+
+#### H. Conceptual Understanding
+
+41. **What are the key features of REST architecture?**
+
+* Statelessness, cacheability, client-server architecture, layered system, uniform interface.
+
+42. **What is statelessness in REST?**
+
+* Each request from client to server must contain all the information needed to understand and process it.
+
+43. **What is the difference between REST and SOAP?**
+
+* REST is lightweight and uses HTTP; SOAP is a protocol with strict rules and XML-based messaging.
+
+44. **What is JSON and why is it used in REST APIs?**
+
+* JSON is a lightweight data format, easy to read and write, and widely used in REST APIs.
+
+45. **What is the difference between query parameters and path parameters?**
+
+* Path parameters are part of the URL path; query parameters are key-value pairs appended after `?`.
+
+
+==========================================================================================================================================================================================================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Based on the document titled "Java CRUD RESTful Web Services Examples with Jersey and Tomcat", here's a detailed explanation, the procedure, full code setup, and project structure to recreate this Java CRUD project using Jersey (JAX-RS) with Apache Tomcat as the server.
+
+🔧 Overview
+You are building a CRUD REST API using:
+
+Java
+
+Jersey (for RESTful API)
+
+Apache Tomcat (server)
+
+WAR deployment to Tomcat
+
+The app performs CRUD operations (Create, Read, Update, Delete) typically on a resource like "User", "Employee", etc.
+
+📁 Project Structure
+Here’s the recommended Maven-style structure:
+
+pgsql
+Copy
+Edit
+crudproject/
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── com/
+│   │   │       └── example/
+│   │   │           ├── model/
+│   │   │           │   └── Employee.java
+│   │   │           ├── service/
+│   │   │           │   └── EmployeeService.java
+│   │   │           └── api/
+│   │   │               └── EmployeeResource.java
+│   │   └── webapp/
+│   │       ├── WEB-INF/
+│   │       │   ├── web.xml
+│   │       │   └── jersey-servlet.xml
+├── pom.xml
+✅ Step-by-Step Procedure
+1. 📦 Set Up Maven Project
+Make sure you have Maven and Java installed. Create a Maven project.
+
+In pom.xml add Jersey dependencies:
+
+xml
+Copy
+Edit
+<project xmlns="http://maven.apache.org/POM/4.0.0" ...>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>crudproject</artifactId>
+  <version>1.0</version>
+  <packaging>war</packaging>
+
+  <dependencies>
+    <!-- Jersey dependencies -->
+    <dependency>
+      <groupId>org.glassfish.jersey.containers</groupId>
+      <artifactId>jersey-container-servlet</artifactId>
+      <version>2.35</version>
+    </dependency>
+
+    <!-- Jackson for JSON support -->
+    <dependency>
+      <groupId>org.glassfish.jersey.media</groupId>
+      <artifactId>jersey-media-json-jackson</artifactId>
+      <version>2.35</version>
+    </dependency>
+  </dependencies>
+</project>
+2. 🧩 Model Class
+src/main/java/com/example/model/Employee.java
+
+java
+Copy
+Edit
+package com.example.model;
+
+public class Employee {
+    private int id;
+    private String name;
+    private String role;
+
+    public Employee() {}
+
+    public Employee(int id, String name, String role) {
+        this.id = id;
+        this.name = name;
+        this.role = role;
+    }
+
+    // Getters and setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
+}
+3. 💼 Service Class
+src/main/java/com/example/service/EmployeeService.java
+
+java
+Copy
+Edit
+package com.example.service;
+
+import com.example.model.Employee;
+import java.util.*;
+
+public class EmployeeService {
+    private static Map<Integer, Employee> empDB = new HashMap<>();
+    private static int idCounter = 1;
+
+    public List<Employee> getAllEmployees() {
+        return new ArrayList<>(empDB.values());
+    }
+
+    public Employee getEmployee(int id) {
+        return empDB.get(id);
+    }
+
+    public Employee addEmployee(Employee emp) {
+        emp.setId(idCounter  );
+        empDB.put(emp.getId(), emp);
+        return emp;
+    }
+
+    public Employee updateEmployee(int id, Employee emp) {
+        emp.setId(id);
+        empDB.put(id, emp);
+        return emp;
+    }
+
+    public Employee deleteEmployee(int id) {
+        return empDB.remove(id);
+    }
+}
+4. 🌐 API Resource
+src/main/java/com/example/api/EmployeeResource.java
+
+java
+Copy
+Edit
+package com.example.api;
+
+import com.example.model.Employee;
+import com.example.service.EmployeeService;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import java.util.List;
+
+@Path("/employees")
+public class EmployeeResource {
+    EmployeeService service = new EmployeeService();
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<Employee> getEmployees() {
+        return service.getAllEmployees();
+    }
+
+    @GET
+    @Path("/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Employee getEmployee(@PathParam("id") int id) {
+        return service.getEmployee(id);
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Employee addEmployee(Employee emp) {
+        return service.addEmployee(emp);
+    }
+
+    @PUT
+    @Path("/{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Employee updateEmployee(@PathParam("id") int id, Employee emp) {
+        return service.updateEmployee(id, emp);
+    }
+
+    @DELETE
+    @Path("/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Employee deleteEmployee(@PathParam("id") int id) {
+        return service.deleteEmployee(id);
+    }
+}
+5. ⚙️ Configuration Files
+web.xml — src/main/webapp/WEB-INF/web.xml
+
+xml
+Copy
+Edit
+<web-app>
+  <display-name>CRUD Project</display-name>
+
+  <servlet>
+    <servlet-name>jersey-servlet</servlet-name>
+    <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+    <init-param>
+      <param-name>jersey.config.server.provider.packages</param-name>
+      <param-value>com.example.api</param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>jersey-servlet</servlet-name>
+    <url-pattern>/api/*</url-pattern>
+  </servlet-mapping>
+</web-app>
+🚀 Deployment Procedure
+A. Build WAR file
+bash
+Copy
+Edit
+mvn clean package
+WAR file will be generated in target/crudproject.war.
+
+B. Deploy on Tomcat
+Copy crudproject.war to TOMCAT_HOME/webapps/
+
+Start Tomcat:
+
+bash
+Copy
+Edit
+./catalina.sh start
+Access your API at:
+
+bash
+Copy
+Edit
+http://localhost:8080/crudproject/api/employees
+Use tools like Postman or curl to test CRUD operations.
+
+🧪 Sample API Test Commands
+bash
+Copy
+Edit
+# Create employee
+curl -X POST -H "Content-Type: application/json" -d '{"name":"John","role":"Manager"}' http://localhost:8080/crudproject/api/employees
+
+# Get all
+curl http://localhost:8080/crudproject/api/employees
+
+# Get by ID
+curl http://localhost:8080/crudproject/api/employees/1
+
+# Update
+curl -X PUT -H "Content-Type: application/json" -d '{"name":"John Smith","role":"CEO"}' http://localhost:8080/crudproject/api/employees/1
+
+# Delete
+curl -X DELETE http://localhost:8080/crudproject/api/employees/1
+📦 Summary
+Component	Description
+Employee.java	POJO class for employee
+EmployeeService.java	Handles in-memory data ops
+EmployeeResource.java	REST API using Jersey
+web.xml	Jersey servlet configuration
+pom.xml	Maven   dependencies
+WAR file	Deployable on Tomcat
+
+Would you like me to zip this whole project and give it to you for download?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Below are the **answers to all the viva questions** based on your Java CRUD RESTful Web Service project using Jersey and Tomcat:
+
+---
+
+## 🟢 **Basic-Level Viva Questions with Answers**
+
+### 🧠 General Java & Web Concepts
+
+1. **What is a web application?**
+   A web application is software that runs on a web server and is accessed via a browser over a network such as the Internet.
+
+2. **What is a servlet?**
+   A servlet is a Java class used to handle HTTP requests and generate responses in a web application.
+
+3. **What is Tomcat and what is it used for?**
+   Apache Tomcat is an open-source web server and servlet container used to deploy and run Java web applications.
+
+4. **What is a WAR file?**
+   A WAR (Web Application Archive) file packages a Java web application into a single archive that can be deployed on a server like Tomcat.
+
+5. **What is the difference between `GET`, `POST`, `PUT`, and `DELETE`?**
+
+   * `GET`: Fetches data.
+   * `POST`: Creates new data.
+   * `PUT`: Updates existing data.
+   * `DELETE`: Removes data.
+
+6. **What is the difference between a web server and an application server?**
+   A web server handles HTTP requests (e.g., Apache), while an application server provides business logic and supports servlets, EJBs, etc. (e.g., Tomcat, JBoss).
+
+7. **What is the use of `web.xml`?**
+   It's a deployment descriptor that configures servlet mappings, filters, and parameters for a Java web application.
+
+8. **What is the HTTP protocol?**
+   Hypertext Transfer Protocol (HTTP) is a stateless protocol used for communication between clients and servers over the web.
+
+9. **What is an API?**
+   An API (Application Programming Interface) allows different software systems to communicate with each other.
+
+10. **What is the difference between HTTP and HTTPS?**
+    HTTPS is the secure version of HTTP; it uses SSL/TLS to encrypt data between client and server.
+
+---
+
+### 🛠️ Java Specific
+
+11. **What is a POJO in Java?**
+    A POJO (Plain Old Java Object) is a simple Java class with private fields and public getters/setters, used to model data.
+
+12. **What are Java packages and why are they used?**
+    Packages group related classes together, making code modular and easier to maintain.
+
+13. **What are Java annotations?**
+    Annotations are metadata added to Java code to provide instructions to the compiler or runtime, like `@Override`, `@Path`.
+
+14. **What are access modifiers in Java?**
+    Keywords like `public`, `private`, `protected` that control access to classes, methods, and variables.
+
+---
+
+## 🟡 **Medium-Level Viva Questions with Answers**
+
+### 🌐 REST API & Jersey
+
+1. **What is REST?**
+   REST (Representational State Transfer) is an architectural style for building web services using HTTP methods.
+
+2. **What are RESTful web services?**
+   Web services that follow the REST principles, using standard HTTP methods to operate on resources identified by URIs.
+
+3. **What is JAX-RS?**
+   Java API for RESTful Web Services; it provides annotations and classes to build REST APIs in Java.
+
+4. **What is Jersey in Java?**
+   Jersey is the reference implementation of JAX-RS used to build RESTful services in Java.
+
+5. **What annotations are used in Jersey and what do they mean?**
+
+   * `@Path`: Defines the URI path.
+   * `@GET`, `@POST`, `@PUT`, `@DELETE`: Define HTTP methods.
+   * `@Consumes`: Defines accepted input types.
+   * `@Produces`: Defines output media types.
+
+6. **What is the purpose of `@PathParam`?**
+   It is used to extract values from the URI path and bind them to method parameters.
+
+7. **How do you handle JSON data in Jersey?**
+   By using Jackson dependency, and annotating the class with `@Produces(MediaType.APPLICATION_JSON)` and `@Consumes`.
+
+8. **How do you test REST APIs?**
+   Using tools like **Postman**, **curl**, or directly via browser for GET requests.
+
+9. **How do you handle exceptions in Jersey?**
+   By creating `ExceptionMapper` classes or handling errors within service methods using try-catch blocks.
+
+---
+
+### 🛠️ Project Structure & Maven
+
+10. **Why did you use Maven?**
+    Maven automates project builds and dependency management, making it easy to add libraries like Jersey and Jackson.
+
+11. **What is `pom.xml` and what does it contain?**
+    It's the Project Object Model file that contains project configuration, dependencies, build settings, etc.
+
+12. **What are dependencies in Maven?**
+    External libraries required by the project, defined in `pom.xml`.
+
+13. **Why do we use `packaging` as WAR in Maven?**
+    Because we are building a deployable web application that will run on a servlet container like Tomcat.
+
+14. **What happens when you run `mvn clean package`?**
+    Maven cleans previous builds and compiles, tests, and packages the project into a WAR file.
+
+---
+
+### 🔄 CRUD Operations
+
+15. **Explain how each CRUD operation is implemented in your project.**
+
+    * **Create**: `@POST` method adds an employee.
+    * **Read**: `@GET` methods fetch one/all employees.
+    * **Update**: `@PUT` method modifies an employee.
+    * **Delete**: `@DELETE` method removes an employee.
+
+16. **What data structure did you use to store employee data? Why?**
+    A `HashMap` for fast access, update, and deletion by ID.
+
+17. **What would you do to make the data persistent?**
+    Integrate a database (like MySQL or PostgreSQL) and use JDBC or JPA/Hibernate.
+
+18. **How does `PUT` differ from `POST` in terms of behavior?**
+
+    * `POST` creates a new resource.
+    * `PUT` updates an existing resource (or creates it if it doesn't exist, depending on implementation).
+
+---
+
+### 🧩 Deployment & Tomcat
+
+19. **What is Apache Tomcat?**
+    A free, open-source Java web server and servlet container used to run Java-based web applications.
+
+20. **How do you deploy a WAR file in Tomcat?**
+    Place the `.war` file in the `webapps` directory of Tomcat, then start the server.
+
+21. **What happens internally when you deploy a WAR file?**
+    Tomcat extracts the WAR, loads the classes, and initializes servlets based on `web.xml`.
+
+22. **What is the default port for Tomcat and how do you change it?**
+    Default is `8080`. It can be changed in `server.xml` under `<Connector port="8080" ...>`.
+
+---
+
+## 💡 Bonus/Conceptual Questions
+
+1. **What are the advantages of REST over SOAP?**
+
+   * Lightweight
+   * Easy to use with HTTP
+   * No need for complex XML messages or WSDL
+   * Better for web-based applications
+
+2. **What is statelessness in REST?**
+   Every REST call is independent; the server doesn’t store client state between requests.
+
+3. **What are idempotent methods in HTTP?**
+   Methods like `GET`, `PUT`, and `DELETE` produce the same result no matter how many times they’re called.
+
+4. **What is the purpose of using `MediaType.APPLICATION_JSON`?**
+   It tells Jersey to consume or produce JSON data in requests and responses.
+
+5. **What is the use of `@Consumes` and `@Produces` in RESTful services?**
+   `@Consumes` defines the input content type, and `@Produces` defines the output content type.
+
+6. **How would you add authentication to your REST API?**
+   Use Basic Auth, API Keys, JWT (JSON Web Token), or OAuth depending on the security level needed.
+
+7. **How would you handle large-scale data or thousands of employees?**
+   Use a proper database, implement pagination, indexing, and possibly use caching and load balancing for performance.
+
+---
+
+Let me know if you want these questions formatted as a **PDF Viva Q\&A guide** or added to a **presentation**.
+
+========================================================================================================================================================================================================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+The lab assignment in the document asks you to develop a Java Maven program that connects to and performs operations with MongoDB, and also to familiarize yourself with MongoDB Compass (GUI) and the MongoDB Shell (CLI).
+
+🔧 Project Overview
+Goal: Build a Maven-based Java application that connects to MongoDB, inserts and reads documents from a collection.
+
+📁 Project Structure
+css
+Copy
+Edit
+MongoDBJavaApp/
+├── pom.xml
+└── src/
+    └── main/
+        └── java/
+            └── com/
+                └── example/
+                    └── mongodb/
+                        └── App.java
+📜 Step-by-Step Procedure
+🔹 1. Install MongoDB
+Download from: https://www.mongodb.com/try/download/community
+
+Install both MongoDB server and MongoDB Compass (GUI).
+
+Also install MongoDB Shell (usually included).
+
+🔹 2. Create the Maven Project
+You can use an IDE (like IntelliJ or Eclipse) or command line:
+
+bash
+Copy
+Edit
+mvn archetype:generate -DgroupId=com.example.mongodb -DartifactId=MongoDBJavaApp -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+🔹 3. Add MongoDB Driver Dependency
+Edit pom.xml to include:
+
+xml
+Copy
+Edit
+<dependencies>
+    <dependency>
+        <groupId>org.mongodb</groupId>
+        <artifactId>mongodb-driver-sync</artifactId>
+        <version>4.11.1</version>
+    </dependency>
+</dependencies>
+Then run:
+
+bash
+Copy
+Edit
+mvn clean install
+🔹 4. Create Java Code to Connect to MongoDB
+App.java:
+
+java
+Copy
+Edit
+package com.example.mongodb;
+
+import com.mongodb.client.*;
+import org.bson.Document;
+
+public class App {
+    public static void main(String[] args) {
+        // Connect to MongoDB server (localhost by default)
+        String uri = "mongodb://localhost:27017";
+        MongoClient mongoClient = MongoClients.create(uri);
+
+        // Access database (it will be created if it doesn't exist)
+        MongoDatabase database = mongoClient.getDatabase("studentDB");
+
+        // Access collection (it will be created if it doesn't exist)
+        MongoCollection<Document> collection = database.getCollection("students");
+
+        // Create a sample document
+        Document student = new Document("name", "John Doe")
+                .append("age", 22)
+                .append("course", "Computer Science");
+
+        // Insert the document
+        collection.insertOne(student);
+        System.out.println("Document inserted.");
+
+        // Read all documents
+        FindIterable<Document> documents = collection.find();
+        for (Document doc : documents) {
+            System.out.println(doc.toJson());
+        }
+
+        // Close client
+        mongoClient.close();
+    }
+}
+🧪 Output
+When you run App.java, the expected output will be:
+
+arduino
+Copy
+Edit
+Document inserted.
+{"_id": ..., "name": "John Doe", "age": 22, "course": "Computer Science"}
+📊 Using MongoDB Compass
+Open Compass and connect to: mongodb://localhost:27017
+
+Browse studentDB → students collection
+
+You’ll see the inserted document.
+
+💻 Using MongoDB Shell
+Start shell:
+
+bash
+Copy
+Edit
+mongosh
+Then run:
+
+js
+Copy
+Edit
+use studentDB
+db.students.find().pretty()
+You’ll see:
+
+json
+Copy
+Edit
+{
+  "_id": ObjectId("..."),
+  "name": "John Doe",
+  "age": 22,
+  "course": "Computer Science"
+}
+✅ Summary
+Task	Tool
+Java DB operations	Java   MongoDB Driver
+GUI DB operations	MongoDB Compass
+CLI DB operations	MongoDB Shell (mongosh)
+
+Would you like me to create a downloadable zip of this complete project structure?
+
+
+
+
+
+
+
+
+
+
+Here are **answers to all viva questions**, organized from **basic to medium level** and grouped by topic:
+
+---
+
+## 🔰 **Basic-Level Viva Questions**
+
+### 🔹 MongoDB Basics
+
+1. **What is MongoDB?**
+   MongoDB is a NoSQL, document-oriented database that stores data in flexible, JSON-like documents.
+
+2. **What type of database is MongoDB?**
+   It is a **NoSQL** and **document-based** database.
+
+3. **What is a document in MongoDB?**
+   A document is a JSON-like structure that contains data in key-value pairs, similar to a row in SQL.
+
+4. **What is a collection in MongoDB?**
+   A collection is a group of MongoDB documents, similar to a table in relational databases.
+
+5. **What is the difference between a collection and a table in SQL?**
+   Collections are schema-less and can store documents with different structures, unlike SQL tables which require a fixed schema.
+
+6. **What format are MongoDB documents stored in?**
+   Internally, documents are stored in BSON (Binary JSON) format.
+
+7. **What is BSON?**
+   BSON is a binary representation of JSON-like documents that MongoDB uses for fast data encoding and decoding.
+
+8. **What is MongoDB Compass used for?**
+   MongoDB Compass is a GUI for visualizing and managing MongoDB databases, collections, and documents.
+
+9. **What is `mongosh`?**
+   `mongosh` is the MongoDB Shell used to interact with the database via command-line interface.
+
+10. **What is the default port MongoDB runs on?**
+    Port **27017**.
+
+---
+
+## 🛠️ **Java & MongoDB Integration**
+
+11. **How do you connect MongoDB to a Java application?**
+    By using the MongoDB Java driver and calling `MongoClients.create("mongodb://localhost:27017")`.
+
+12. **What is the role of the MongoDB Java driver?**
+    It allows Java applications to interact with MongoDB databases.
+
+13. **Why did you use Maven for this project?**
+    Maven handles dependency management, project structure, and build automation efficiently.
+
+14. **What is the use of the `pom.xml` file?**
+    It defines project dependencies, plugins, and build configuration for Maven.
+
+15. **What is the package you used for connecting to MongoDB in Java?**
+    `com.mongodb.client.*` and `org.bson.Document`.
+
+16. **Which method is used to connect to the database in Java?**
+    `MongoDatabase database = mongoClient.getDatabase("yourDBName");`
+
+17. **What is the difference between `MongoClient` and `MongoClients.create()`?**
+    `MongoClients.create()` is a factory method that returns a `MongoClient` object used to access MongoDB.
+
+18. **How do you insert a document into a collection in Java?**
+    `collection.insertOne(document);`
+
+19. **How do you retrieve documents from a MongoDB collection in Java?**
+    Use `FindIterable<Document> docs = collection.find();` and iterate over the result.
+
+20. **How do you close the MongoDB connection in Java?**
+    By calling `mongoClient.close();`.
+
+---
+
+## 🧪 MongoDB Shell & CLI
+
+21. **How do you start the MongoDB shell?**
+    Run `mongosh` in the terminal or command prompt.
+
+22. **How do you switch databases in `mongosh`?**
+    Use `use yourDBName`.
+
+23. **How do you insert a document in the MongoDB shell?**
+    `db.collectionName.insertOne({ key: "value" })`
+
+24. **How do you view all documents in a collection using the shell?**
+    `db.collectionName.find().pretty()`
+
+25. **What is the command to show all databases?**
+    `show dbs`
+
+26. **What command creates a new collection?**
+    `db.createCollection("collectionName")`
+    *(Note: inserting a document into a non-existent collection also creates it automatically.)*
+
+---
+
+## ⚙️ Maven & Project Structure
+
+27. **What is Maven?**
+    Maven is a build automation and dependency management tool for Java projects.
+
+28. **What are the benefits of using Maven in a Java project?**
+    It simplifies dependency management, enforces standard structure, and automates builds.
+
+29. **What is the structure of a Maven project?**
+
+    * `src/main/java` for source code
+    * `src/test/java` for tests
+    * `pom.xml` for build configuration
+
+30. **What are dependencies in Maven?**
+    External libraries that a project requires, declared in `pom.xml`.
+
+31. **Where are your compiled class files stored after running `mvn compile`?**
+    In the `target/classes` directory.
+
+32. **What is the role of the `src/main/java` folder in Maven?**
+    It contains the application's main Java source files.
+
+---
+
+## 📚 Medium-Level & Conceptual Questions
+
+33. **How does MongoDB differ from a relational database like MySQL?**
+    MongoDB stores data as flexible documents (JSON-like), while MySQL uses structured tables with fixed schemas.
+
+34. **Why is MongoDB considered schema-less?**
+    Documents in the same collection can have different fields and structures.
+
+35. **Can MongoDB enforce schema validation?**
+    Yes, MongoDB allows optional schema validation using JSON Schema.
+
+36. **What are the advantages of using MongoDB with Java?**
+    Flexibility in data modeling, ease of integration using official Java drivers, and faster development.
+
+37. **How is a MongoDB document mapped to a Java object?**
+    Using `Document` class or libraries like **Morphia** or **Spring Data MongoDB** for POJO mapping.
+
+38. **How can you update a document in MongoDB using Java?**
+    Use `collection.updateOne(filter, updateDocument);`
+
+39. **Can MongoDB be used for transaction-like operations?**
+    Yes, MongoDB supports multi-document ACID transactions since version 4.0.
+
+40. **What happens if the database or collection doesn't exist when you insert data?**
+    MongoDB automatically creates them upon insertion.
+
+41. **What is the difference between `insertOne()` and `insertMany()`?**
+    `insertOne()` inserts a single document; `insertMany()` inserts multiple documents at once.
+
+42. **How would you filter documents based on a condition in Java?**
+    Use `collection.find(Filters.eq("key", "value"));`
+
+43. **What is the importance of indexes in MongoDB?**
+    Indexes improve query performance by allowing fast lookup of documents.
+
+44. **How do you handle errors or exceptions while connecting to MongoDB in Java?**
+    By using try-catch blocks and catching `MongoException` or other runtime exceptions.
+
+---
+
+Would you like a PDF or printable version of these Q\&As for your viva prep?
+
+
+
+
+
