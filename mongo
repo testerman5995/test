@@ -1,0 +1,29 @@
+package rn7010;
+
+import com.mongodb.client.*;
+import org.bson.Document;
+
+public class MongoDBDemo {
+    public static void main(String[] args) {
+        String uri = "mongodb://localhost:27017";
+        try (MongoClient mongoClient = MongoClients.create(uri)) {
+            MongoDatabase database = mongoClient.getDatabase("studentdb");
+            MongoCollection<Document> collection = database.getCollection("students");
+
+            // Insert a document
+            Document newStudent = new Document("rollNumber", "103")
+                .append("name", "Charlie")
+                .append("course", "C++")
+                .append("marks", 78);
+            collection.insertOne(newStudent);
+            System.out.println("Inserted: " + newStudent.toJson());
+
+            // Read all documents
+            System.out.println("\nAll Students:");
+            MongoCursor<Document> cursor = collection.find().iterator();
+            while (cursor.hasNext()) {
+                System.out.println(cursor.next().toJson());
+            }
+        }
+    }
+}
