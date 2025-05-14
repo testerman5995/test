@@ -1,0 +1,217 @@
+Here’s the **complete code and directory structure** for your **Student Information Portal** web application with HTML frontend and Java Servlet backend, ready to be deployed on **Apache Tomcat** (manual or Maven project).
+
+---
+
+## **Directory Structure**
+
+```
+StudentInfoPortal/
+├── src/
+│   └── main/
+│       ├── java/
+│       │   └── rn241047039/
+│       │       └── studentservlet.java
+│       └── webapp/
+│           ├── index.html
+│           └── WEB-INF/
+│               └── web.xml (optional)
+│
+├── lib/
+│   └── sqljdbc4.jar  (MSSQL JDBC driver)
+│
+├── build/ or target/ (created after compilation)
+└── README.md
+```
+
+---
+
+## **1. `index.html`** (Place inside `src/main/webapp/`)
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Information Portal</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            width: 350px;
+            color: white;
+        }
+        h2 {
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            padding: 12px;
+            margin: 10px 0;
+            width: 100%;
+            border: none;
+            border-radius: 5px;
+            text-align: center;
+        }
+        input[type="submit"] {
+            background-color: #ff7eb3;
+            color: white;
+            border: none;
+            padding: 12px;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+        input[type="submit"]:hover {
+            background-color: #ff4f88;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Student Information</h2>
+        <form action="StudentServlet" method="post">
+            <input type="text" id="rollNumber" name="rollNumber" placeholder="Enter Roll Number" required><br>
+            <input type="submit" value="Get Details">
+        </form>
+    </div>
+</body>
+</html>
+```
+
+---
+
+## **2. `studentservlet.java`** (Place inside `src/main/java/rn241047039/`)
+
+```java
+package rn241047039;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+@WebServlet("/StudentServlet")
+public class studentservlet extends HttpServlet {
+    private static final long serialVersionUID = 1L;
+
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        doPost(request, response);
+    }
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        response.setContentType("text/html");
+        PrintWriter out = response.getWriter();
+
+        String rollNumberStr = request.getParameter("rollNumber");
+
+        if (rollNumberStr == null || rollNumberStr.trim().isEmpty()) {
+            out.println("<h2>Error: Roll Number is required</h2>");
+            return;
+        }
+
+        int rollNumber;
+        try {
+            rollNumber = Integer.parseInt(rollNumberStr);
+        } catch (NumberFormatException e) {
+            out.println("<h2>Error: Invalid Roll Number format</h2>");
+            return;
+        }
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+            String dbURL = "jdbc:sqlserver://172.16.51.64:1433;databaseName=241047039;encrypt=false;";
+            String user = "tarun";
+            String password = "Tar@39";
+
+            conn = DriverManager.getConnection(dbURL, user, password);
+
+            String sql = "SELECT * FROM Students WHERE roll_number = ?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, rollNumber);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                out.println("<h2>Student Details:</h2>");
+                out.println("<p>Roll Number: "   rs.getInt("roll_number")   "</p>");
+                out.println("<p>Name: "   rs.getString("name")   "</p>");
+                out.println("<p>Age: "   rs.getInt("age")   "</p>");
+                out.println("<p>Department: "   rs.getString("department")   "</p>");
+            } else {
+                out.println("<h2>No Student Found with Roll Number: "   rollNumber   "</h2>");
+            }
+
+        } catch (Exception e) {
+            out.println("<h2>Error fetching student details</h2>");
+            e.printStackTrace(out);
+        } finally {
+            try { if (rs != null) rs.close(); } catch (Exception e) { e.printStackTrace(); }
+            try { if (pstmt != null) pstmt.close(); } catch (Exception e) { e.printStackTrace(); }
+            try { if (conn != null) conn.close(); } catch (Exception e) { e.printStackTrace(); }
+        }
+    }
+}
+```
+
+---
+
+## **3. `web.xml` (Optional)**
+
+Place this in `src/main/webapp/WEB-INF/` **only if** you're not using `@WebServlet`.
+
+```xml
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+         version="3.0">
+    <servlet>
+        <servlet-name>StudentServlet</servlet-name>
+        <servlet-class>rn241047039.studentservlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>StudentServlet</servlet-name>
+        <url-pattern>/StudentServlet</url-pattern>
+    </servlet-mapping>
+</web-app>
+```
+
+---
+
+## **4. JDBC Driver**
+
+Download and place `sqljdbc4.jar` (or the latest MSSQL JDBC driver `.jar`) inside the `lib/` folder. Also add it to the project classpath.
+
+---
+
+## Deployment Tips:
+
+* **Manual build**: Compile `.java` using `javac`, package everything into a `.war` file, and deploy to `TOMCAT_HOME/webapps/`.
+* **Using Maven**: Include dependencies and build the `.war` using `mvn clean package`.
+
+Let me know if you want a `pom.xml` version for Maven.
